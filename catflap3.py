@@ -5,6 +5,8 @@ import picamera
 import argparse
 from twython import Twython
 
+
+
 # Set up our IO
 io.setmode(io.BCM)
 Inner_door_pin = 24
