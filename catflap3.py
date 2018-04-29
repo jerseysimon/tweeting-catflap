@@ -1,8 +1,9 @@
+import os
 import time
 import datetime
 import RPi.GPIO as io
 import picamera
-import argparse
+import syslog
 from twython import Twython
 
 
@@ -33,27 +34,29 @@ camera.exif_tags['IFD0.Software'] = 'Tweeting Catflap 2.0'
 # Turn off the LED
 camera.led = False
 
-# Pull out the twitter key from the commandline
-parser = argparse.ArgumentParser()
-parser.add_argument("key")
-twitterKey = parser.parse_args()
 
+
+def log(message):
+    syslog.syslog(syslog.LOG_INFO, message)
 
 def format_time(epoc_time):
     return datetime.datetime.fromtimestamp(epoc_time).strftime('%Y-%m-%d %H:%M:%S')
 
 
 def tweet(message, file):
-    api = Twython(twitterKey)
+    api = Twython(os.environ['apiKey'],
+                  os.environ['apiSecret'],
+                  os.environ['accessToken'],
+                  os.environ['accessTokenSecret'])
 
     photo = open(file, 'rb')
 
-    print "Uploading photo to twitter...\n"
+    log("Uploading photo to twitter...\n")
     media_status = api.upload_media(media=photo)
 
-    print "Posting tweet with picture...\n"
+    log("Posting tweet with picture...\n")
     api.update_status(media_ids=[media_status['media_id']], status=message)
-    print "Tweet Complete...\n"
+    log("Tweet Complete...\n")
 
 
 def determine_state(current_state, event):
@@ -105,14 +108,14 @@ def catflap_callback_inner(pin):
     # Read and store the current state of the pin - high or low
     current_value = io.input(pin)
     # Log the event
-    print("GPIO event inner (%s) - time_now %s, value is %s , last activation at %s" % (
+    log("GPIO event inner (%s) - time_now %s, value is %s , last activation at %s" % (
         io.input(pin), format_time(time_now), current_value, format_time(time_stamp_inner)))
 
     if current_value == io.LOW:
         # If the pin is low, the flap is closed!
 
         # Take a note
-        print("Inner Flap closed at %s" % format_time(time.time()))
+        log("Inner Flap closed at %s" % format_time(time.time()))
 
     elif current_value == io.HIGH:
         # If the pin is high, the flap has opened!
@@ -123,12 +126,12 @@ def catflap_callback_inner(pin):
         if (time_now - time_stamp_inner) >= 2:
             # If it's been two seconds since we last saw a flap open event
             # then we're interested in this one as a new event
-            print("Inner Flap opened (not bounce) at %s" % time.time())
+            log("Inner Flap opened (not bounce) at %s" % time.time())
             # Let's store the time this event happened
             time_stamp_inner = time_now
 
             cat_state = determine_state(cat_state, "inner_opening")
-            print "Cat state is %s" % cat_state
+            log("Cat state is %s" % cat_state)
 
             # Now we generate a filename based on the time, for instance
             # 20141007-200000.jpg (8pm Oct 7th 2014). This means we can
@@ -150,14 +153,14 @@ def catflap_callback_inner(pin):
 
             if cat_state == "inside":
                 tweet("Ginger has entered the building at %s" % format_time(time.time()), final_path)
-                print("tweet")
+                log("tweet")
 
         else:
             # If it's been less than two seconds since the last cat,
             # this is probably just the flap swinging past the sensor
 
             # But keep a record to help us figure out problems
-            print("Debounce filtered an event")
+            log("Debounce filtered an event")
 
 
 def catflap_callback_outer(pin):
@@ -177,14 +180,14 @@ def catflap_callback_outer(pin):
     # Read and store the current state of the pin - high or low
     current_value = io.input(pin)
     # Log the event
-    print("GPIO event outer(%s) - time_now %s, last activation at %s" % (
+    log("GPIO event outer(%s) - time_now %s, last activation at %s" % (
         io.input(pin), format_time(time_now), format_time(time_stamp_outer)))
 
     if current_value == io.LOW:
         # If the pin is low, the flap is closed!
 
         # Take a note
-        print("Outer Flap closed at %s" % format_time(time.time()))
+        log("Outer Flap closed at %s" % format_time(time.time()))
 
     elif current_value == io.HIGH:
         # If the pin is high, the flap has opened!
@@ -196,23 +199,23 @@ def catflap_callback_outer(pin):
             # If it's been two seconds since we last saw a flap open event
             # then we're interested in this one as a new event
 
-            print("Outer Flap opened (not bounce) at %s" % format_time(time.time()))
+            log("Outer Flap opened (not bounce) at %s" % format_time(time.time()))
             # Let's store the time this event happened
             time_stamp_outer = time_now
 
             cat_state = determine_state(cat_state, "outer_opening")
-            print "Cat state is %s" % cat_state
+            log("Cat state is %s" % cat_state)
 
             if cat_state == "outside":
                 tweet("Ginger has left the building at %s" % format_time(time.time()), final_path)
-                print("tweet")
+                log("tweet")
 
         else:
             # If it's been less than two seconds since the last cat,
             # this is probably just the flap swinging past the sensor
 
             # But keep a record to help us figure out problems
-            print("Outer Debounce filtered an event")
+            log("Outer Debounce filtered an event")
 
 
 io.add_event_detect(Inner_door_pin, io.BOTH, callback=catflap_callback_inner)
