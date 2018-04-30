@@ -1,17 +1,8 @@
 
 .idea/tweeting-catflap.iml
-old/__init__.py
-old/catflap.py
 .idea/misc.xml
 .idea/modules.xml
 .idea/vcs.xml
 .idea/workspace.xml
-old/catflap2.1 tester.py
-old/catflap2.1.py
-old/catflap2.1.tester.py
-old/catflap2.1py
-old/catflap2.2.py
-old/catflap2.py
-old/catflap3.1.py
-twitter example.py
 .env
+.DS_Store
