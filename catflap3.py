@@ -3,7 +3,7 @@ import time
 import datetime
 import RPi.GPIO as io
 import picamera
-import syslog
+import logging
 from twython import Twython
 
 # Set up our IO
@@ -32,10 +32,12 @@ camera.exif_tags['IFD0.Software'] = 'Tweeting Catflap 2.0'
 # Turn off the LED
 camera.led = False
 
+# A bit of a hack to only show my logging info. TODO
+logging.basicConfig(filename='catflap.log', format='%(asctime)s:%(message)s', level=logging.CRITICAL)
 
 
 def log(message):
-    syslog.syslog(syslog.LOG_INFO, message)
+    logging.critical(message)
 
 def format_time(epoc_time):
     return datetime.datetime.fromtimestamp(epoc_time).strftime('%Y-%m-%d %H:%M:%S')
@@ -217,6 +219,9 @@ def catflap_callback_outer(pin):
 
 io.add_event_detect(Inner_door_pin, io.BOTH, callback=catflap_callback_inner)
 io.add_event_detect(Outer_door_pin, io.BOTH, callback=catflap_callback_outer)
+
+log("Started tweeting catflap")
+print("Started tweeting catflap")
 
 while True:
     time.sleep(0.5)
