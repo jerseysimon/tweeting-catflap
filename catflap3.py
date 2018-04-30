@@ -6,8 +6,6 @@ import picamera
 import syslog
 from twython import Twython
 
-
-
 # Set up our IO
 io.setmode(io.BCM)
 Inner_door_pin = 24
@@ -42,8 +40,8 @@ def log(message):
 def format_time(epoc_time):
     return datetime.datetime.fromtimestamp(epoc_time).strftime('%Y-%m-%d %H:%M:%S')
 
-
 def tweet(message, file):
+    # These are set from a .env file. Load using "source .env"
     api = Twython(os.environ['apiKey'],
                   os.environ['apiSecret'],
                   os.environ['accessToken'],
@@ -67,7 +65,7 @@ def determine_state(current_state, event):
         if event == "inner_opening":
             return "exiting"
         elif event == "outer_opening":
-            print "invalid state transition - was inside, got outer flap. Inruder!?"
+            log("invalid state transition - was inside, got outer flap. Inruder!?")
             return "exiting"
 
     elif current_state == "exiting":
@@ -76,10 +74,9 @@ def determine_state(current_state, event):
         elif event == "outer_opening":
             return "outside"
 
-
     elif current_state == "outside":
         if event == "inner_opening":
-            print "invalid state transition - was outside, got inner flap. "
+            log("invalid state transition - was outside, got inner flap. ")
             return "outside"
         elif event == "outer_opening":
             return "entering"
@@ -149,7 +146,7 @@ def catflap_callback_inner(pin):
             time.sleep(0.6)
             camera.capture(final_path)
 
-            print("Photo Taken")
+            log("Photo Taken")
 
             if cat_state == "inside":
                 tweet("Ginger has entered the building at %s" % format_time(time.time()), final_path)
@@ -219,7 +216,7 @@ def catflap_callback_outer(pin):
 
 
 io.add_event_detect(Inner_door_pin, io.BOTH, callback=catflap_callback_inner)
-io.add_event_detect(Outer_door_pin, io.BOTH, callback=catflap_callback_outer, bouncetime=200)
+io.add_event_detect(Outer_door_pin, io.BOTH, callback=catflap_callback_outer)
 
 while True:
     time.sleep(0.5)
