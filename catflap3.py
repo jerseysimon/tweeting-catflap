@@ -217,11 +217,16 @@ def catflap_callback_outer(pin):
             log("Outer Debounce filtered an event")
 
 
-io.add_event_detect(Inner_door_pin, io.BOTH, callback=catflap_callback_inner)
-io.add_event_detect(Outer_door_pin, io.BOTH, callback=catflap_callback_outer)
+def main():
+    io.add_event_detect(Inner_door_pin, io.BOTH, callback=catflap_callback_inner)
+    io.add_event_detect(Outer_door_pin, io.BOTH, callback=catflap_callback_outer)
 
-log("Started tweeting catflap")
-print("Started tweeting catflap")
+    log("Started tweeting catflap")
+    print("Started tweeting catflap")
 
-while True:
-    time.sleep(0.5)
+    while True:
+        time.sleep(0.5)
+
+
+if __name__ == "__main__":
+    main()
